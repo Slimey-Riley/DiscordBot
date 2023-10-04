@@ -11,7 +11,38 @@ import os
 import json
 import requests
 import sqlite3
+import asyncio
 from sqlite3 import Error
+
+class Loop_Handler:
+  async def add_emojis(self, reply, i, dict, embeds, message):
+    emojis = ['⬅️', '➡️']
+
+    def check(reaction, user):
+        return user == message.author and str(reaction.emoji) in emojis and reaction.message == reply
+    
+    for emoji in emojis:
+      await reply.add_reaction(emoji)
+    try:
+      emojiWait, user = await bot.wait_for('reaction_add', check=check, timeout=60.0)
+    except asyncio.TimeoutError:
+      print('timeout')
+
+    else:
+      if emojiWait.emoji == emojis[0]: 
+        i -= 1
+        if i == -1: i = len(dict) - 1
+        await Loop_Handler.edit_book(self, reply, i, dict, embeds, message)
+      if emojiWait.emoji == emojis[1]:  
+        i+=1
+        if i == len(dict): i = 0
+        await Loop_Handler.edit_book(self, reply, i, dict, embeds, message)
+  
+  #edits search reply to new reply
+  async def edit_book(self, reply, i, dict, embeds, message):
+    await reply.clear_reactions()
+    reply = await reply.edit(embed=embeds[i])
+    await Loop_Handler.add_emojis(self, reply, i, dict, embeds, message)
 
 
 
@@ -131,14 +162,6 @@ class Database_Handler:
       print(e)
 
 
-def jprint(obj):
-  """
-    Prints text of json in userfriendly format
-  """
-  text = json.dumps(obj, sort_keys=True, indent=4)
-  print(text)
-
-
 #set discord intents
 intents = discord.Intents.default()
 intents.message_content = True
@@ -193,6 +216,7 @@ async def on_message(message):
       #search for book
       query = cmd.split('search ', 1)[1]
       book_dict = book_handler.search_books(query)
+      embeds = []
       for book in book_dict.values():
         embed = discord.Embed(title=book['title'],
                               url=book['url'],
@@ -201,11 +225,14 @@ async def on_message(message):
         embed.set_thumbnail(url=book['image'])
         embed.add_field(name='Author', value=book['author'][0], inline=True)
         embed.add_field(name='Rating', value=book['rating'], inline=True)
-        await message.channel.send(embed=embed)
-        #blank message
-        await message.channel.send('_    _')
+        embeds.append(embed)
+      
+      #adds emojis and emoji listener to scroll through search results
+      
+      reply = await message.channel.send(embed=embeds[0])
+      loop_handler = Loop_Handler()
+      await loop_handler.add_emojis(reply, 1, book_dict, embeds, message)
 
-        
     if 'add' in cmd:
       #add book to database
       try:
