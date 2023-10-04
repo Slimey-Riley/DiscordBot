@@ -228,46 +228,11 @@ async def on_message(message):
         embeds.append(embed)
       
       #adds emojis and emoji listener to scroll through search results
-<<<<<<< HEAD
       
       reply = await message.channel.send(embed=embeds[0])
       loop_handler = Loop_Handler()
       await loop_handler.add_emojis(reply, 1, book_dict, embeds, message)
 
-=======
-      async def add_emojis(reply, i):
-        emojis = ['⬅️', '➡️']
-
-        def check(reaction, user):
-            return user == message.author and str(reaction.emoji) in emojis
-        
-        for emoji in emojis:
-          await reply.add_reaction(emoji)
-        try:
-          emojiWait, user = await bot.wait_for('reaction_add', check=check, timeout=60.0)
-        except asyncio.TimeoutError:
-          print('timeout')
-
-        else:
-          if emojiWait.emoji == emojis[0]: 
-            i -= 1
-            if i == -1: i = len(book_dict) - 1
-            await edit_book(reply, i)
-          if emojiWait.emoji == emojis[1]:  
-            i+=1
-            if i == len(book_dict): i = 0
-            await edit_book(reply, i)
-      
-      #edits search reply to new reply
-      async def edit_book(reply, i):
-        await reply.clear_reactions()
-        reply = await reply.edit(embed=embeds[i])
-        await add_emojis(reply, i)
-
-      reply = await message.channel.send(embed=embeds[0])
-      await add_emojis(reply, 1)
-
->>>>>>> 12cf56341db6a7ff84cf4b622cbd21d9480015fc
     if 'add' in cmd:
       #add book to database
       try:
